@@ -4,3 +4,5 @@ services:
   service:
     ports:
       - "9000:9000"
+    environment:
+      - DATA_GENERATOR_SERVICE_RATE_UNLIMITED=1
