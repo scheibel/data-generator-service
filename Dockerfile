@@ -15,5 +15,6 @@ RUN pipenv install
 
 ADD service.py service.py
 ADD v0 v0
+ADD data data
 
-CMD ["python3", "main.py"]
+CMD ["pipenv", "run", "uvicorn", "--host", "0.0.0.0", "--port", "9000", "service:app"]
