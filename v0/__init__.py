@@ -1,9 +1,10 @@
 
 from fastapi import APIRouter, Response, BackgroundTasks, File, UploadFile
-from fastapi import HTTPException, status, Depends
+from fastapi import HTTPException, status, Depends, WebSocket
 from fastapi.responses import FileResponse, StreamingResponse, PlainTextResponse
 
 import random
+import websockets
 
 router = APIRouter()
 
@@ -67,7 +68,7 @@ async def api_get_csv_download():
 
 
 @router.get("/csv/generator_n/as/download", tags=["csv", "generator", "stream"])
-async def api_get_csv_download(n = 100):
+async def api_get_csv_download(n: int = 100):
     content = ""
     for s in generate_full_n(n):
         content += s
@@ -76,9 +77,22 @@ async def api_get_csv_download(n = 100):
 
 
 @router.get("/csv/generator_n/as/stream", tags=["csv", "generator", "stream"])
-async def api_get_csv_download(n = 100):
+async def api_get_csv_download(n: int = 100):
 
     return StreamingResponse(generate_full_n(n), media_type="text/csv")
+
+
+@router.websocket("/csv/generator_n/as/websocket")
+async def api_get_csv_download(websocket: WebSocket, n: int = 100):
+    await websocket.accept()
+    
+    try:
+        for s in generate_full_n(n):
+            await websocket.send_text(s)
+        
+        await websocket.close()
+    except websockets.exceptions.ConnectionClosedError:
+        pass
 
 
 @router.get("/csv/generator_infinite/as/stream", tags=["csv", "generator", "stream"])
@@ -87,3 +101,19 @@ async def api_get_csv_download():
         return False
 
     return StreamingResponse(generate_full_infinite(break_check), media_type="text/csv")
+
+
+@router.websocket("/csv/generator_infinite/as/websocket")
+async def api_get_csv_download(websocket: WebSocket):
+    def break_check():
+        return False
+    
+    await websocket.accept()
+    
+    try:
+        for s in generate_full_infinite(break_check):
+            await websocket.send_text(s)
+        
+        await websocket.close()
+    except websockets.exceptions.ConnectionClosedError:
+        pass
